@@ -14,6 +14,100 @@ variable "key_file" {
   default     = "~/.ssh/thing-thang.pem"
 }
 
+
+########################################################
+###  Define VPC & Kindly Secure Networking 
+########################################################
+
+##}
+
+resource "aws_vpc" "pupdev-vpc" {
+    cidr_block 	       = "20.0.0.0/16"
+    tags = {
+	Name	       = "PupDev VPC"
+    }
+}
+
+resource "aws_internet_gateway" "pupdev-ig" {
+    vpc_id = "aws_vpc.pupdev-vpc.id"
+    tags = {
+  	Name	       = "PupDev Internet Gateway"
+    }
+}
+
+resource "aws_network_acl" "pupdev-acl" {
+    vpc_id 	       = "aws_vpc.pupdev-vpc.id"
+    tags = {
+    	Name           = "PupDev Network ACL"
+    }
+}
+
+resource "aws_network_acl_rule" "pupdev-acl-rule" {
+    network_acl_id     = "aws_network_acl.pupdev-acl.id"
+    rule_number        = 100
+    egress             = false
+    protocol           = "-1"
+    rule_action        = "allow"
+    cidr_block         = "0.0.0.0/0"
+    from_port          = 0
+    to_port            = 65535
+}
+
+resource "aws_security_group" "pupdev-all-in" {
+    vpc_id 	       = "aws_vpc.pupdev-vpc.id"
+}
+
+resource "aws_security_group_rule" "open-ssh-in" {
+    type 	       = "ingress"
+    from_port	       = 22 
+    to_port	       = 22 
+    protocol           = "tcp"
+    cidr_blocks        = ["69.215.158.0/24","50.200.5.0/24","75.150.214.0/24","173.165.56.0/24"]
+    security_group_id  = "aws_security_group.pupdev-all-in.id"
+} 
+
+resource "aws_security_group_rule" "open-https-out" {
+    type               = "egress"
+    from_port          = 443 
+    to_port            = 443 
+    protocol           = "tcp"
+    cidr_blocks        = ["0.0.0.0/0"]
+    security_group_id  = "aws_security_group.pupdev-all-in.id"
+}
+
+resource "aws_security_group_rule" "open-http-out" {
+    type               = "egress"
+    from_port          = 80 
+    to_port            = 80 
+    protocol           = "tcp"
+    cidr_blocks        = ["0.0.0.0/0"]
+    security_group_id  = "aws_security_group.pupdev-all-in.id"
+}
+
+resource "aws_security_group_rule" "open-ssh-out" {
+    type               = "egress"
+    from_port          = 22 
+    to_port            = 22 
+    protocol           = "tcp"
+    cidr_blocks        = ["0.0.0.0/0"]
+    security_group_id  = "aws_security_group.pupdev-all-in.id"
+}
+
+resource "aws_security_group_rule" "open-all-in-icmp" {
+    type	       = "ingress"
+    from_port 	       = 8
+    to_port            = 0
+    protocol           = "icmp"
+    cidr_blocks        = ["0.0.0.0/0"]
+    security_group_id  = "aws_security_group.pupdev-all-in.id"
+}
+
+##########################################
+#####################################################
+
+
+
+
 locals {
   instance_type = "t2.medium"
 }

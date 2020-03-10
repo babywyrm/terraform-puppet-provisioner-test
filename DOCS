@@ -17,4 +17,29 @@ https://www.howtoforge.com/tutorial/how-to-setup-puppet-master-and-agent-on-cent
 
 ################################
 ##
-##
+
+Syntax,
+https://github.com/terraform-aws-modules/terraform-aws-security-group
+https://github.com/hashicorp/terraform/issues/21742
+
+
+Fixed, (03/10/2020)
+Warning: Interpolation-only expressions are deprecated
+
+  on main.tf line 32, in resource "aws_internet_gateway" "pupdev-ig":
+  32:     vpc_id = "${aws_vpc.pupdev-vpc.id}"
+
+Terraform 0.11 and earlier required all non-constant expressions to be
+provided via interpolation syntax, but this pattern is now deprecated. To
+silence this warning, remove the "${ sequence from the start and the }"
+sequence from the end of this expression, leaving just the inner expression.
+
+Template interpolation syntax is still used to construct strings from
+expressions when the template includes multiple interpolation sequences or a
+mixture of literal strings and interpolations. This deprecation applies only
+to templates that consist entirely of a single interpolation sequence.
+
+(and 8 more similar warnings elsewhere)
+
+
+#################################################
