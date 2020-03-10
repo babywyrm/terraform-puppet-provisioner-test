@@ -1,21 +1,15 @@
-#########################################################
-######
-####################
-######
-#########################################################
-
 variable "key_name" {
   description = "The name of the EC2 key pair to use"
-  default     = "thing-thang"
+  default     = "default"
 }
 
 variable "key_file" {
   description = "The private key for the ec2-user used in SSH connections and by Puppet Bolt"
-  default     = "~/.ssh/thing-thang.pem"
+  default     = "~/.ssh/default.pem"
 }
 
 locals {
-  instance_type = "t2.medium"
+  instance_type = "t2.micro"
 }
 
 data "aws_ami" "ami" {
@@ -86,39 +80,30 @@ resource "aws_instance" "agent" {
   depends_on = [aws_instance.master]
 }
 
+resource "aws_instance" "os_win_agent" {
+  ami               = data.aws_ami.windows_2012R2.image_id
+  instance_type     = "t2.large"
+  key_name          = var.key_name
+  get_password_data = true
 
+  timeouts {
+    create = "15m"
+  }
 
- ################################################################
-##please disable windows for now, lol, preferably for all time  ##
- ################################################################
-##
-#resource "aws_instance" "os_win_agent" {
-#  ami               = data.aws_ami.windows_2012R2.image_id
-#  instance_type     = "t2.large"
-#  key_name          = var.key_name
-#  get_password_data = true
-#
-#  timeouts {
-#    create = "15m"
-#  }
-#
-#  provisioner "puppet" {
-#    open_source = true
-#    server      = aws_instance.master.public_dns
-#    server_user = "ec2-user"
-#
-#    connection {
-#      host     = self.public_ip
-#      type     = "winrm"
-#      user     = "Administrator"
-#      password = rsadecrypt(self.password_data, file(var.key_file))
-#      timeout  = "10m"
-#    }
-#  }
-#
-#  user_data  = data.template_file.winrm.rendered
-#  depends_on = [aws_instance.master]
-#}
+  provisioner "puppet" {
+    open_source = true
+    server      = aws_instance.master.public_dns
+    server_user = "ec2-user"
 
-##############################
-####################
+    connection {
+      host     = self.public_ip
+      type     = "winrm"
+      user     = "Administrator"
+      password = rsadecrypt(self.password_data, file(var.key_file))
+      timeout  = "10m"
+    }
+  }
+
+  user_data  = data.template_file.winrm.rendered
+  depends_on = [aws_instance.master]
+}
